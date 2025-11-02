@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>신경 재활 반응 훈련 게임</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      touch-action: none;
+      background: #f0f8ff;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+    #scoreBoard {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.8);
+      border-radius: 12px;
+      padding: 10px 20px;
+      font-size: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    #restartBtn {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+    #restartBtn:active {
+      background: #388e3c;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <div id="scoreBoard">점수: 0 | 남은 시간: 30초</div>
+  <button id="restartBtn">🔁 다시 시작</button>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreBoard = document.getElementById('scoreBoard');
+    const restartBtn = document.getElementById('restartBtn');
+
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+
+    let score = 0;
+    let timeLeft = 30;
+    let circle = { x: 0, y: 0, r: 40 };
+    let gameInterval;
+    let timerInterval;
+    let isGameRunning = false;
+
+    function randomPosition() {
+      circle.x = Math.random() * (width - 80) + 40;
+      circle.y = Math.random() * (height - 160) + 80;
+    }
+
+    function drawCircle() {
+      ctx.clearRect(0, 0, width, height);
+      ctx.beginPath();
+      ctx.arc(circle.x, circle.y, circle.r, 0, Math.PI * 2);
+      ctx.fillStyle = "#4CAF50";
+      ctx.shadowColor = "#2e7d32";
+      ctx.shadowBlur = 15;
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    function updateScoreboard() {
+      scoreBoard.textContent = `점수: ${score} | 남은 시간: ${timeLeft}초`;
+    }
+
+    function startGame() {
+      isGameRunning = true;
+      restartBtn.style.display = 'none';
+      score = 0;
+      timeLeft = 30;
+      randomPosition();
+      drawCircle();
+      updateScoreboard();
+
+      // ✅ 공 이동 속도를 2.5초로 늦춤
+      gameInterval = setInterval(() => {
+        randomPosition();
+        drawCircle();
+      }, 2500);
+
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        updateScoreboard();
+        if (timeLeft <= 0) endGame();
+      }, 1000);
+    }
+
+    function endGame() {
+      isGameRunning = false;
+      clearInterval(gameInterval);
+      clearInterval(timerInterval);
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = "#000";
+      ctx.font = "bold 32px 'Noto Sans KR'";
+      ctx.textAlign = "center";
+      ctx.fillText(`게임 종료! 최종 점수: ${score}`, width / 2, height / 2 - 30);
+      restartBtn.style.display = 'block';
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      if (!isGameRunning) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const dx = x - circle.x;
+      const dy = y - circle.y;
+
+      if (Math.sqrt(dx * dx + dy * dy) <= circle.r) {
+        score++;
+        updateScoreboard();
+        randomPosition();
+        drawCircle();
+      }
+    });
+
+    restartBtn.addEventListener('click', () => {
+      startGame();
+    });
+
+    window.addEventListener('resize', () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+      if (isGameRunning) drawCircle();
+    });
+
+    // 첫 화면 안내
+    ctx.font = "bold 28px 'Noto Sans KR'";
+    ctx.textAlign = "center";
+    ctx.fillText("🔹 화면을 터치해서 공을 맞추세요!", width / 2, height / 2 - 40);
+    ctx.fillText("🔹 30초 동안 가능한 한 많이 터치!", width / 2, height / 2);
+    restartBtn.style.display = 'block';
+  </script>
+</body>
+</html>
